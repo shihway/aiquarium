@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>롯데 아쿠아리움 법정관리종 전문 상담 챗봇</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e0f7fa;
+        }
+        #messages::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        #messages::-webkit-scrollbar-thumb {
+            background-color: #d1d5db;
+            border-radius: 9999px;
+        }
+        .markdown-body p {
+            margin: 0 0 0.5em;
+        }
+        .markdown-body p:last-child {
+            margin-bottom: 0;
+        }
+        .markdown-body ul,
+        .markdown-body ol {
+            margin: 0 0 0.5em 1.25em;
+            padding: 0;
+        }
+        .markdown-body ul {
+            list-style: disc;
+        }
+        .markdown-body ol {
+            list-style: decimal;
+        }
+        .markdown-body strong {
+            font-weight: 700;
+        }
+        .markdown-body code {
+            background-color: rgba(0, 0, 0, 0.06);
+            padding: 0.1em 0.35em;
+            border-radius: 0.25em;
+            font-size: 0.9em;
+        }
+        .markdown-body h1,
+        .markdown-body h2,
+        .markdown-body h3 {
+            font-weight: 700;
+            margin: 0.6em 0 0.3em;
+        }
+        .markdown-body h1:first-child,
+        .markdown-body h2:first-child,
+        .markdown-body h3:first-child {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col lg:flex-row items-center justify-center gap-6 p-4 bg-gradient-to-br from-cyan-50 via-sky-50 to-blue-100">
+
+    <!-- 참조 정보 패널 -->
+    <aside class="bg-white rounded-3xl shadow-2xl w-full lg:w-72 shrink-0 p-6 flex flex-col" style="height: 90vh;">
+        <button type="button" id="sourcesToggle" class="text-lg font-bold text-gray-800 mb-4 flex items-center justify-between w-full text-left lg:pointer-events-none">
+            참조 정보 출처
+            <svg id="sourcesChevron" class="w-4 h-4 text-gray-400 transition-transform lg:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        </button>
+
+        <div id="sourcesBody" class="hidden lg:flex flex-col flex-grow overflow-y-auto space-y-5 pr-1">
+            <div>
+                <span class="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 mb-2">실시간 조회</span>
+                <ul class="space-y-2 text-xs text-gray-600">
+                    <li>
+                        <span class="font-semibold text-gray-700 block">CITES 국제 규제</span>
+                        CITES Species+ API (api.speciesplus.net)
+                    </li>
+                    <li>
+                        <span class="font-semibold text-gray-700 block">국내 멸종위기 야생생물</span>
+                        환경부 공공데이터포털 API (api.odcloud.kr)
+                    </li>
+                    <li>
+                        <span class="font-semibold text-gray-700 block">국외반출승인대상생물자원</span>
+                    </li>
+                    <li>
+                        <span class="font-semibold text-gray-700 block">유입주의생물</span>
+                    </li>
+                    <li>
+                        <span class="font-semibold text-gray-700 block">생태계교란생물</span>
+                    </li>
+                    <li>
+                        <span class="font-semibold text-gray-700 block">생태계위해우려생물</span>
+                    </li>
+                    <li>
+                        <span class="font-semibold text-gray-700 block">해양보호생물</span>
+                    </li>
+                    <li>
+                        <span class="font-semibold text-gray-700 block">회유성해양생물</span>
+                    </li>
+                    <li>
+                        <span class="font-semibold text-gray-700 block">유해해양생물</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div>
+                <span class="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 mb-2">전문 지식베이스</span>
+                <p class="text-xs text-gray-600">
+                    롯데 아쿠아리움의 카테고리별 신고 절차, 필요 서류, 소관기관 정보를 정리한 법률 자문 지식베이스를 근거로 답변합니다.
+                </p>
+            </div>
+
+            <div class="mt-auto pt-4 border-t border-cyan-100 text-xs text-gray-400">
+                정보 최종 확인일: 2026-07-27
+            </div>
+        </div>
+    </aside>
+
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl p-6 sm:p-10 transition-all flex flex-col" style="height: 90vh;">
+        <!-- 헤더 영역 -->
+        <div class="text-center mb-6 max-w-2xl mx-auto">
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-800 mb-2 tracking-tight">LOTTE AIquarium</h1>
+            <p class="text-gray-500 text-sm sm:text-base">
+                학명이든 국명이든 자연어로 물어보세요. <span class="font-semibold text-cyan-600">CITES</span>와
+                <span class="font-semibold text-emerald-600">국내 멸종위기종</span>은 실시간 조회로 확인하며,
+                답변마다 실제 참고한 출처를 함께 확인할 수 있습니다.
+            </p>
+            <a href="original.html" class="inline-flex items-center mt-3 text-sm font-semibold text-cyan-600 hover:text-cyan-700 hover:underline">학명으로 빠르게 조회하기 (통합 조회 도구) →</a>
+        </div>
+
+        <!-- 대화 영역 -->
+        <div id="messages" class="flex-grow overflow-y-auto space-y-4 px-1 py-2 mb-4 border-t border-b border-cyan-100"></div>
+
+        <!-- 입력 영역 -->
+        <form id="chatForm" class="flex items-end gap-3 mt-2">
+            <textarea id="chatInput" rows="1"
+                class="flex-grow px-4 py-3 rounded-xl border border-gray-300 focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all text-base shadow-sm resize-none"
+                placeholder="예: 임금펭귄은 CITES 대상이야? / Panthera tigris 전시하려면 뭐가 필요해?"
+                autocomplete="off"></textarea>
+            <button type="submit" id="sendBtn"
+                class="bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-5 rounded-xl transition-colors flex justify-center items-center shadow-lg shadow-cyan-500/30 shrink-0">
+                <span id="sendBtnLabel">전송</span>
+                <svg id="loadingSpinner" class="hidden animate-spin ml-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </button>
+        </form>
+    </div>
+
+    <script>
+        // 모바일/태블릿에서는 기본 접힘, lg(1024px) 이상에서는 항상 펼침(Tailwind lg:flex가 담당)
+        const sourcesToggle = document.getElementById('sourcesToggle');
+        const sourcesBody = document.getElementById('sourcesBody');
+        const sourcesChevron = document.getElementById('sourcesChevron');
+        sourcesToggle.addEventListener('click', () => {
+            if (window.matchMedia('(min-width: 1024px)').matches) return;
+            sourcesBody.classList.toggle('hidden');
+            sourcesChevron.classList.toggle('rotate-180');
+        });
+
+        const messagesEl = document.getElementById('messages');
+        const chatForm = document.getElementById('chatForm');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const sendBtnLabel = document.getElementById('sendBtnLabel');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        // 대화 기록: 매 턴 전체를 서버로 재전송 (서버는 상태를 저장하지 않음)
+        let history = [];
+
+        function appendMessage(role, text, sources) {
+            const wrapper = document.createElement('div');
+            wrapper.className = role === 'user' ? 'flex flex-col items-end' : 'flex flex-col items-start';
+
+            const bubble = document.createElement('div');
+            bubble.className = role === 'user'
+                ? 'max-w-[80%] bg-cyan-600 text-white rounded-2xl rounded-br-sm px-4 py-3 text-sm whitespace-pre-wrap shadow-sm'
+                : 'max-w-[80%] bg-cyan-50/60 text-gray-800 border border-cyan-100 rounded-2xl rounded-bl-sm px-4 py-3 text-sm markdown-body shadow-sm';
+
+            if (role === 'user') {
+                bubble.textContent = text;
+            } else {
+                bubble.innerHTML = DOMPurify.sanitize(marked.parse(text));
+            }
+            wrapper.appendChild(bubble);
+
+            if (role === 'model' && Array.isArray(sources) && sources.length > 0) {
+                wrapper.appendChild(buildSourcesPanel(sources));
+            }
+
+            messagesEl.appendChild(wrapper);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            return bubble;
+        }
+
+        function buildSourcesPanel(sources) {
+            const panel = document.createElement('div');
+            panel.className = 'max-w-[80%] mt-1.5 border border-cyan-100 rounded-xl bg-white/70 px-3 py-2';
+
+            const caption = document.createElement('div');
+            caption.className = 'text-[11px] font-semibold text-gray-400 tracking-wide mb-1.5';
+            caption.textContent = '이 답변의 출처';
+            panel.appendChild(caption);
+
+            const list = document.createElement('ul');
+            list.className = 'space-y-1';
+
+            const typeStyle = {
+                realtime: { badge: '실시간 공공데이터 조회', dot: 'bg-cyan-500' },
+                internal: { badge: '내부 검토 자료', dot: 'bg-slate-400' }
+            };
+
+            sources.forEach((src) => {
+                const style = typeStyle[src.type] || typeStyle.internal;
+                const item = document.createElement('li');
+                item.className = 'flex items-start gap-2 text-xs text-gray-600';
+                item.innerHTML = `<span class="mt-1 w-1.5 h-1.5 rounded-full ${style.dot} shrink-0"></span><span><span class="text-gray-700">${src.label}</span><span class="text-gray-400"> · ${style.badge}</span></span>`;
+                list.appendChild(item);
+            });
+
+            panel.appendChild(list);
+            return panel;
+        }
+
+        function setLoadingState(isLoading) {
+            sendBtn.disabled = isLoading;
+            chatInput.disabled = isLoading;
+            sendBtnLabel.textContent = isLoading ? '확인 중...' : '전송';
+            loadingSpinner.classList.toggle('hidden', !isLoading);
+        }
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            appendMessage('user', text);
+            history.push({ role: 'user', text });
+            chatInput.value = '';
+            setLoadingState(true);
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ history })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error || `서버 오류 (상태 코드: ${response.status})`);
+                }
+
+                const data = await response.json();
+                const replyText = data.text || '(응답을 생성하지 못했습니다.)';
+                appendMessage('model', replyText, data.sources);
+                history.push({ role: 'model', text: replyText });
+            } catch (error) {
+                console.error('Chat error:', error);
+                appendMessage('model', `오류가 발생했습니다: ${error.message}`);
+            } finally {
+                setLoadingState(false);
+                chatInput.focus();
+            }
+        });
+
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                chatForm.requestSubmit();
+            }
+        });
+
+        appendMessage('model', '안녕하세요. 롯데 아쿠아리움 법정관리종 전문 상담 챗봇입니다. 학명이나 국명으로 종을 물어보시면 CITES·국내 멸종위기종 등 관련 법정 카테고리를 실시간으로 확인해 출처와 함께 안내해 드립니다.');
+    </script>
+</body>
+</html>

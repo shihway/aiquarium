@@ -1,0 +1,18 @@
+{
+  "name": "aiquarium",
+  "version": "1.0.0",
+  "description": "롯데 아쿠아리움 법정관리종 전문 상담 챗봇 (RAG)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@google/genai": "^2.13.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}

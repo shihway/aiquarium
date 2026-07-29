@@ -1,7 +1,7 @@
 /**
  * species-lookup.js
  *
- * 롯데 아쿠아리움 법정관리종 조회 로직. original.html에서 추출한 순수 로직 모듈로,
+ * AIquarium 법정관리종 조회 로직. original.html에서 추출한 순수 로직 모듈로,
  * 브라우저(original.html, agent.html)와 Node 서버(server.js) 양쪽에서 공유한다.
  *
  * UMD 모듈: Node에서는 require()로, 브라우저에서는 window.SpeciesLookup으로 접근.
@@ -489,6 +489,33 @@
             { scientific_raw: "Asterias amurensis", common_kr: "아무르불가사리" }
         ];
 
+        // 지정 관리 생물 내장 데이터 (main.html 기준)
+        const designatedManagementData = [
+            { scientific_raw: "Pyxicephalus adspersus" },
+            { scientific_raw: "Hydrochoerus hydrochaeris" },
+            { scientific_raw: "Phoca vitulina" }
+        ];
+
+        // 수출ㆍ수입 등의 허가대상 야생생물 내장 데이터 (main.html 기준, "Odobenus rosmar" 오타를 "Odobenus rosmarus"로 수정)
+        const exportImportPermissionData = [
+            { scientific_raw: "Odobenus rosmarus" },
+            { scientific_raw: "Otariidae" }
+        ];
+
+        // 천연기념물 내장 데이터 (main.html 기준)
+        const naturalMonumentData = [
+            { scientific_raw: "Hemibarbus mylodon" },
+            { scientific_raw: "Cobitis choii" },
+            { scientific_raw: "Pseudobagrus brevicorpus" },
+            { scientific_raw: "Moschus moschiferus" },
+            { scientific_raw: "Naemorhaedus caudatus" },
+            { scientific_raw: "Pteromys volans" },
+            { scientific_raw: "Ursus thibetanus ussuricus" },
+            { scientific_raw: "Lutra lutra" },
+            { scientific_raw: "Phoca largha" },
+            { scientific_raw: "Myotis formosus tsuensis" }
+        ];
+
     // ------------------------------------------------------------------
     // 학명 정규화 + 카테고리별 체크 함수 (original.html에서 그대로 추출)
     // ------------------------------------------------------------------
@@ -726,6 +753,75 @@
             }
         }
 
+        /**
+         * 지정 관리 생물 여부 확인
+         */
+        function checkDesignatedManagementStatus(query) {
+            const normResult = normalizeScientificName(query);
+
+            if (normResult.error) {
+                return { status: 'error', message: normResult.error, source: SOURCE_STATIC };
+            }
+
+            const searchKey = normResult.normalized;
+            const matches = designatedManagementData.filter(item => item.normalizedKey === searchKey);
+
+            if (matches.length > 0) {
+                return { status: 'found', matches: matches, source: SOURCE_STATIC };
+            } else {
+                return { status: 'not_found', source: SOURCE_STATIC };
+            }
+        }
+
+        /**
+         * 수출ㆍ수입 등의 허가대상 야생생물 여부 확인
+         * (Otariidae처럼 종이 아닌 과(family) 단위로 지정된 항목이 있어, 공백 없는
+         *  한 단어 항목은 정규화된 학명 비교 대신 원문을 대소문자 무시하고 그대로 비교한다)
+         */
+        function checkExportImportPermissionStatus(query) {
+            const trimmedQuery = (query || '').trim().replace(/\s+/g, ' ');
+            const isSingleWord = /^[A-Za-z]+$/.test(trimmedQuery);
+            const normResult = normalizeScientificName(query);
+            const searchKey = normResult.error ? null : normResult.normalized;
+
+            if (normResult.error && !isSingleWord) {
+                return { status: 'error', message: normResult.error, source: SOURCE_STATIC };
+            }
+
+            const matches = exportImportPermissionData.filter((item) => {
+                if (!item.scientific_raw.includes(' ')) {
+                    return item.scientific_raw.toLowerCase() === trimmedQuery.toLowerCase();
+                }
+                return searchKey !== null && item.normalizedKey === searchKey;
+            });
+
+            if (matches.length > 0) {
+                return { status: 'found', matches: matches, source: SOURCE_STATIC };
+            } else {
+                return { status: 'not_found', source: SOURCE_STATIC };
+            }
+        }
+
+        /**
+         * 천연기념물 여부 확인
+         */
+        function checkNaturalMonumentStatus(query) {
+            const normResult = normalizeScientificName(query);
+
+            if (normResult.error) {
+                return { status: 'error', message: normResult.error, source: SOURCE_STATIC };
+            }
+
+            const searchKey = normResult.normalized;
+            const matches = naturalMonumentData.filter(item => item.normalizedKey === searchKey);
+
+            if (matches.length > 0) {
+                return { status: 'found', matches: matches, source: SOURCE_STATIC };
+            } else {
+                return { status: 'not_found', source: SOURCE_STATIC };
+            }
+        }
+
 
     // ------------------------------------------------------------------
     // CITES 체크 (기존 original.html 인라인 fetch 로직을 함수로 분리 +
@@ -787,7 +883,10 @@
         ecologicalDisturbanceData,
         ecologicalRiskData,
         migratoryMarineData,
-        harmfulMarineData
+        harmfulMarineData,
+        designatedManagementData,
+        exportImportPermissionData,
+        naturalMonumentData
     ].forEach(initNormalizedKeys);
 
     // ------------------------------------------------------------------
@@ -811,7 +910,10 @@
             ecological_risk: checkEcologicalRiskStatus(query),
             marine_protected: checkMarineProtectedStatus(query),
             migratory_marine: checkMigratoryMarineStatus(query),
-            harmful_marine: checkHarmfulMarineStatus(query)
+            harmful_marine: checkHarmfulMarineStatus(query),
+            designated_management: checkDesignatedManagementStatus(query),
+            export_import_permission: checkExportImportPermissionStatus(query),
+            natural_monument: checkNaturalMonumentStatus(query)
         };
     }
 
@@ -826,6 +928,9 @@
         checkMarineProtectedStatus: checkMarineProtectedStatus,
         checkMigratoryMarineStatus: checkMigratoryMarineStatus,
         checkHarmfulMarineStatus: checkHarmfulMarineStatus,
+        checkDesignatedManagementStatus: checkDesignatedManagementStatus,
+        checkExportImportPermissionStatus: checkExportImportPermissionStatus,
+        checkNaturalMonumentStatus: checkNaturalMonumentStatus,
         lookupAllCategories: lookupAllCategories,
         marineProtectedData: marineProtectedData,
         exportApprovalData: exportApprovalData,
@@ -833,6 +938,9 @@
         ecologicalDisturbanceData: ecologicalDisturbanceData,
         ecologicalRiskData: ecologicalRiskData,
         migratoryMarineData: migratoryMarineData,
-        harmfulMarineData: harmfulMarineData
+        harmfulMarineData: harmfulMarineData,
+        designatedManagementData: designatedManagementData,
+        exportImportPermissionData: exportImportPermissionData,
+        naturalMonumentData: naturalMonumentData
     };
 });

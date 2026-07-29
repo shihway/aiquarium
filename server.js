@@ -79,11 +79,14 @@ const CATEGORY_LABELS = {
     ecological_risk: { label: '생태계위해우려생물 지정 현황', type: 'internal' },
     marine_protected: { label: '해양보호생물 지정 현황', type: 'internal' },
     migratory_marine: { label: '회유성해양생물 지정 현황', type: 'internal' },
-    harmful_marine: { label: '유해해양생물 지정 현황', type: 'internal' }
+    harmful_marine: { label: '유해해양생물 지정 현황', type: 'internal' },
+    designated_management: { label: '지정 관리 생물 지정 현황', type: 'internal' },
+    export_import_permission: { label: '수출ㆍ수입 등의 허가대상 야생생물 지정 현황', type: 'internal' },
+    natural_monument: { label: '천연기념물 지정 현황', type: 'internal' }
 };
 
 function buildSystemInstruction() {
-    return `당신은 롯데 아쿠아리움(롯데월드 아쿠아리움) 직원을 위한 **법정관리종 전문 상담 챗봇**입니다.
+    return `당신은 AIquarium 직원을 위한 **법정관리종 전문 상담 챗봇**입니다.
 범용 챗봇이 아니라, 아래 원칙들을 절대적으로 지키는 전문 도구입니다.
 
 ## 원칙 1: 신선함 (Freshness)
@@ -117,7 +120,7 @@ function buildSystemInstruction() {
 - \`"error"\`: 그 카테고리에 한해서만 "확인 필요"라고 답하고 이유(메시지)를 설명하세요. 한 카테고리의 오류가 다른 카테고리의 확정 답변에 영향을 주지 않도록 하세요.
 
 ## 지식베이스 (카테고리별 필요 절차·서류·소관기관)
-아래는 8개 법정 카테고리에 대한 신고/허가 절차, 필요 서류, 소관기관 정보입니다. 절차 관련 질문에는 이 내용을 근거로 답하고, 원칙 3에 따라 해당 항목의 출처 ID를 태그로 표기하세요.
+아래는 법정 카테고리별 신고/허가 절차, 필요 서류, 소관기관 정보입니다. 절차 관련 질문에는 이 내용을 근거로 답하고, 원칙 3에 따라 해당 항목의 출처 ID를 태그로 표기하세요.
 
 ${KNOWLEDGE_BASE}
 `;
@@ -132,7 +135,8 @@ const LOOKUP_TOOL = {
     name: 'lookup_species_legal_status',
     description:
         'CITES, 국내 멸종위기 야생생물, 국외반출승인대상생물자원, 유입주의생물, 생태계교란생물, ' +
-        '생태계위해우려생물, 해양보호생물, 회유성해양생물, 유해해양생물 등 모든 법정 카테고리를 조회하고 ' +
+        '생태계위해우려생물, 해양보호생물, 회유성해양생물, 유해해양생물, 지정 관리 생물, ' +
+        '수출ㆍ수입 등의 허가대상 야생생물, 천연기념물 등 모든 법정 카테고리를 조회하고 ' +
         '각 결과의 출처(source, 실시간 API인지 내부 정적 데이터인지)를 함께 반환한다. ' +
         '법적 분류를 언급하기 전 반드시 이 함수를 호출할 것 — 학습 데이터만으로 답변 금지.',
     parametersJsonSchema: {
@@ -208,7 +212,8 @@ const app = express();
 app.use(express.json());
 
 // 정적 파일은 화이트리스트 방식으로만 서빙 (.env, server.js 등은 절대 노출하지 않음)
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'agent.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'main.html')));
+app.get('/main.html', (req, res) => res.sendFile(path.join(__dirname, 'main.html')));
 app.get('/agent.html', (req, res) => res.sendFile(path.join(__dirname, 'agent.html')));
 app.get('/original.html', (req, res) => res.sendFile(path.join(__dirname, 'original.html')));
 app.get('/species-lookup.js', (req, res) => res.sendFile(path.join(__dirname, 'species-lookup.js')));

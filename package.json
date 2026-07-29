@@ -1,7 +1,7 @@
 {
   "name": "aiquarium",
   "version": "1.0.0",
-  "description": "롯데 아쿠아리움 법정관리종 전문 상담 챗봇 (RAG)",
+  "description": "AIquarium 법정관리종 전문 상담 챗봇 (RAG)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

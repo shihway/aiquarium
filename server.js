@@ -42,12 +42,25 @@ async function loadKrEndangeredData() {
 // 지식베이스 로드: 구분별법적관리카테고리.txt + 카테고리별설명/*.txt를
 // 1회만 읽어 system instruction에 포함 (파일명 대신 안정적인 출처 ID 헤더 부착)
 // --------------------------------------------------------------------
+// macOS(APFS/Finder)에서 업로드된 한글 폴더/파일명은 NFD(자모 분해형)로 저장되지만
+// 소스 코드의 리터럴은 보통 NFC(완성형)라, Linux(Railway) 상에서 바이트가 달라 ENOENT가 난다.
+// __dirname을 스캔해 NFC 기준으로 실제 항목을 찾아 정규화 차이를 흡수한다.
+function findEntryNFC(dir, targetName) {
+    const match = fs.readdirSync(dir).find((name) => name.normalize('NFC') === targetName);
+    if (!match) {
+        throw new Error(`디렉터리 항목을 찾을 수 없습니다: ${targetName} (in ${dir})`);
+    }
+    return match;
+}
+
 function loadKnowledgeBase() {
-    const categoryDir = path.join(__dirname, '카테고리별설명');
+    const overviewFileName = findEntryNFC(__dirname, '구분별법적관리카테고리.txt');
+    const categoryDirName = findEntryNFC(__dirname, '카테고리별설명');
+    const categoryDir = path.join(__dirname, categoryDirName);
     const entries = [
-        { relPath: '구분별법적관리카테고리.txt', id: 'kb_overview' },
+        { relPath: overviewFileName, id: 'kb_overview' },
         ...fs.readdirSync(categoryDir).map((f, i) => ({
-            relPath: path.join('카테고리별설명', f),
+            relPath: path.join(categoryDirName, f),
             id: `kb_category_${i}`
         }))
     ];

@@ -1345,6 +1345,13 @@
             chatLoadingSpinner.classList.toggle('hidden', !isLoading);
         }
 
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                chatForm.requestSubmit();
+            }
+        });
+
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -1357,7 +1364,6 @@
             setChatLoadingState(true);
 
             try {
-                // 백엔드 연결 필요 (현재는 예외 처리로 방어)
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1368,11 +1374,16 @@
                     const errData = await response.json().catch(() => ({}));
                     throw new Error(errData.error || `서버 오류 (상태 코드: ${response.status})`);
                 }
+
+                const data = await response.json();
+                appendChatMessage('model', data.text, data.sources);
+                chatHistory.push({ role: 'model', text: data.text });
             } catch (err) {
                 console.warn(err);
                 appendChatMessage('model', '현재 챗봇 서버와 통신할 수 없습니다.');
             } finally {
                 setChatLoadingState(false);
+                chatInput.focus();
             }
         });
     </script>
